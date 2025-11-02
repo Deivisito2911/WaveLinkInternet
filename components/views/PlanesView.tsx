@@ -69,7 +69,7 @@ export const PlanesView = () => {
     if (error) {
       setQualityMessage(`❌ Error al enviar: ${error.message}`)
     } else {
-      setQualityMessage("✅ ¡Feedback enviado! Gracias por ayudarnos a mejorar nuestros .")
+      setQualityMessage("✅ ¡Feedback enviado! Gracias por ayudarnos a mejorar nuestros servicios.")
       setRating(5)
       setComments("")
       setIsAnonymous(false)
