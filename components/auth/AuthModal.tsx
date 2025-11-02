@@ -91,7 +91,7 @@ export const AuthModal = ({
             <input
               type="email"
               value={authForm.email}
-              onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
+              onInput={(e) => setAuthForm({ ...authForm, email: (e.target as HTMLInputElement).value })}
               className="w-full p-3 bg-gray-700 border border-purple-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white"
               required
             />
