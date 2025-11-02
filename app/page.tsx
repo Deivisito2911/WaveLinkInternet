@@ -19,7 +19,14 @@ export default function Home() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [authForm, setAuthForm] = useState({ email: "", password: "", confirmPassword: "" }) // <-- CAMBIA username por email
+  const [authForm, setAuthForm] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+  }) // <-- CAMBIA username por email
   const [authError, setAuthError] = useState("")
 
   useEffect(() => {
@@ -107,6 +114,13 @@ export default function Home() {
     const { error } = await supabase.auth.signUp({
       email: authForm.email,
       password: authForm.password,
+      options: {
+        data: {
+          first_name: authForm.first_name,
+          last_name: authForm.last_name,
+          phone: authForm.phone,
+        },
+      },
     })
 
     if (error) {
@@ -129,7 +143,14 @@ export default function Home() {
 
   const cleanAuthModal = () => {
     setAuthError("")
-    setAuthForm({ email: "", password: "", confirmPassword: "" })
+    setAuthForm({
+      email: "",
+      password: "",
+      confirmPassword: "",
+      first_name: "",
+      last_name: "",
+      phone: "",
+    })
   }
 
   const getNavButtonClass = (target: string) =>

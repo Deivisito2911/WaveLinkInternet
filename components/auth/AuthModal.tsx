@@ -47,6 +47,45 @@ export const AuthModal = ({
         )}
 
         <form onSubmit={authMode === "login" ? handleLogin : handleRegister} className="space-y-4">
+          {authMode === "register" && (
+            <>
+              <div className="flex gap-4">
+                {/* Campo Nombre */}
+                <div className="w-1/2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nombre</label>
+                  <input
+                    type="text"
+                    value={authForm.first_name || ""}
+                    onChange={(e) => setAuthForm({ ...authForm, first_name: e.target.value })}
+                    className="w-full p-3 bg-gray-700 border border-purple-500 rounded-lg ..."
+                    required
+                  />
+                </div>
+                {/* Campo Apellido */}
+                <div className="w-1/2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Apellido</label>
+                  <input
+                    type="text"
+                    value={authForm.last_name || ""}
+                    onChange={(e) => setAuthForm({ ...authForm, last_name: e.target.value })}
+                    className="w-full p-3 bg-gray-700 border border-purple-500 rounded-lg ..."
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Campo Teléfono */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Número Telefónico</label>
+                <input
+                  type="tel"
+                  value={authForm.phone || ""}
+                  onChange={(e) => setAuthForm({ ...authForm, phone: e.target.value })}
+                  className="w-full p-3 bg-gray-700 border border-purple-500 rounded-lg ..."
+                />
+              </div>
+            </>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
             <input
@@ -72,6 +111,7 @@ export const AuthModal = ({
 
           {authMode === "register" && (
             <div>
+              
               <label className="block text-sm font-medium text-gray-300 mb-2">Confirmar Contraseña</label>
               <input
                 type="password"
