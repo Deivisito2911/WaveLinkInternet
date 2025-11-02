@@ -79,11 +79,6 @@ export default function Home() {
       setAuthError("La contraseña debe tener al menos 6 caracteres")
       return
     }
-    const userExists = users.find((u) => u.username === authForm.username)
-    if (userExists) {
-      setAuthError("El nombre de usuario ya está registrado")
-      return
-    }
 
     const { error } = await supabase.auth.signUp({
       email: authForm.email,
