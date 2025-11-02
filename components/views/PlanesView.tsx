@@ -2,8 +2,6 @@
 "use client"
 import React, { useState, useEffect } from "react" // <-- 1. AÑADE useEffect
 import { Zap, TrendingUp, ChevronRight } from "lucide-react"
-// 2. ELIMINA ESTAS LÍNEAS
-// import { PLANS, PROMOTIONS } from "@/data/mock-data"
 import { Card } from "@/components/ui/Card"
 import { RetroButton } from "@/components/ui/RetroButton"
 import { supabase } from "@/lib/supabaseClient" // <-- 3. IMPORTA supabase
@@ -41,7 +39,11 @@ export const PlanesView = () => {
     const fetchData = async () => {
       // Carga planes y promociones en paralelo
       const [plansRes, promosRes] = await Promise.all([
-        supabase.from("plans").select("*"),
+        supabase
+          .from("plans")
+          .select("*")
+          .order("speed", { ascending: true }), // Ordenar por velocidad
+        
         supabase.from("promotions").select("*")
       ])
 
