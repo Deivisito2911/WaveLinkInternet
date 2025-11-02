@@ -48,14 +48,13 @@ export const AuthModal = ({
 
         <form onSubmit={authMode === "login" ? handleLogin : handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Nombre de Usuario</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
             <input
-              type="text"
-              value={authForm.username}
-              onChange={(e) => setAuthForm({ ...authForm, username: e.target.value })}
+              type="email"
+              value={authForm.email}
+              onChange={(e) => setAuthForm({ ...authForm, email: e.target.value })}
               className="w-full p-3 bg-gray-700 border border-purple-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-white"
               required
-              minLength={3}
             />
           </div>
 
