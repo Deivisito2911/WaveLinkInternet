@@ -1,15 +1,35 @@
+// components/views/AdminView.tsx
 "use client"
-import React, { useState, useMemo, useCallback } from "react"
+import React, { useState, useMemo, useCallback, useEffect } from "react" // 1. Importa useEffect
 import { Settings, MapPin, BarChart3 } from "lucide-react"
-import { INITIAL_ORDERS, MUNICIPES, TECHNICIANS, Order } from "@/data/mock-data"
+import { MUNICIPES, TECHNICIANS, Order } from "@/data/mock-data" // 2. BORRA INITIAL_ORDERS
 import { generateZoneStats } from "@/lib/utils"
 import { Card } from "@/components/ui/Card"
 import { RetroButton } from "@/components/ui/RetroButton"
+import { supabase } from "@/lib/supabaseClient" // 1. Importa supabase
 
 export const AdminView = () => {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS)
+  // 3. Inicializa 'orders' como un array vacío
+  const [orders, setOrders] = useState<Order[]>([])
   const [sortBy, setSortBy] = useState("id")
   const [techFilter, setTechFilter] = useState("")
+
+  // 4. AÑADE useEffect para cargar datos
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const fetchOrders = async () => {
+    const { data, error } = await supabase
+      .from("orders") // El nombre de tu tabla
+      .select("*")   // Trae todas las columnas
+    
+    if (error) {
+      console.error("Error cargando órdenes:", error)
+    } else if (data) {
+      setOrders(data)
+    }
+  }
 
   const zoneStats = useMemo(() => generateZoneStats(orders), [orders])
 
@@ -28,11 +48,26 @@ export const AdminView = () => {
     })
   }, [orders, sortBy, techFilter])
 
-  const handleAssignTech = useCallback((id: number, tech: string) => {
+  const handleAssignTech = useCallback(async (id: number, tech: string) => {
+    const newStatus = tech ? "ASIGNADA" : "PENDIENTE"
+
+    // 5a. Actualiza el estado local INMEDIATAMENTE (para UI rápida)
     setOrders((prev) =>
-      prev.map((order) => (order.id === id ? { ...order, technician: tech, status: "ASIGNADA" } : order)),
+      prev.map((order) => (order.id === id ? { ...order, technician: tech, status: newStatus } : order)),
     )
-  }, [])
+    
+    // 5b. Actualiza la base de datos en segundo plano
+    const { error } = await supabase
+      .from("orders")
+      .update({ technician: tech, status: newStatus })
+      .eq("id", id) // Dónde id = id
+
+    if (error) {
+      console.error("Error al asignar técnico:", error)
+      // Opcional: Revertir el estado si falla
+      fetchOrders() // Recarga los datos para asegurar consistencia
+    }
+  }, []) // El array de dependencias de useCallback sigue vacío
 
   const getStatusColor = (status: string) => {
     if (status === "PENDIENTE") return "bg-red-600/50 border-red-500"

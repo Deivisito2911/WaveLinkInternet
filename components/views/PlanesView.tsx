@@ -1,23 +1,78 @@
+// components/views/PlanesView.tsx
 "use client"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react" // <-- 1. AÑADE useEffect
 import { Zap, TrendingUp, ChevronRight } from "lucide-react"
-import { PLANS, PROMOTIONS } from "@/data/mock-data"
+// 2. ELIMINA ESTAS LÍNEAS
+// import { PLANS, PROMOTIONS } from "@/data/mock-data"
 import { Card } from "@/components/ui/Card"
 import { RetroButton } from "@/components/ui/RetroButton"
+import { supabase } from "@/lib/supabaseClient" // <-- 3. IMPORTA supabase
+
+// 4. DEFINE LOS TIPOS (opcional pero recomendado)
+type Plan = {
+  id: number;
+  name: string;
+  speed: number;
+  price: number;
+  features: string[];
+  color: string;
+  border: string;
+}
+type Promotion = {
+  id: number;
+  name: string;
+  discount: string;
+  date: string;
+  color: string;
+}
 
 export const PlanesView = () => {
+  // 5. CREA ESTADOS PARA LOS DATOS
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
+
   const [rating, setRating] = useState(5)
   const [comments, setComments] = useState("")
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [qualityMessage, setQualityMessage] = useState<string | null>(null)
 
-  const handleQualitySubmit = (e: React.FormEvent) => {
+  // 6. AÑADE useEffect PARA CARGAR DATOS
+  useEffect(() => {
+    const fetchData = async () => {
+      // Carga planes y promociones en paralelo
+      const [plansRes, promosRes] = await Promise.all([
+        supabase.from("plans").select("*"),
+        supabase.from("promotions").select("*")
+      ])
+
+      if (plansRes.data) setPlans(plansRes.data)
+      if (promosRes.data) setPromotions(promosRes.data)
+    }
+    
+    fetchData()
+  }, []) // El array vacío asegura que se ejecute solo una vez
+
+  // 7. MODIFICA handleQualitySubmit PARA GUARDAR DATOS
+  const handleQualitySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setQualityMessage("✅ ¡Feedback enviado! Gracias por ayudarnos a mejorar nuestros servicios.")
-    setRating(5)
-    setComments("")
-    setIsAnonymous(false)
-    setTimeout(() => setQualityMessage(null), 5000)
+
+    const { error } = await supabase
+      .from("quality_feedback")
+      .insert({
+        rating: rating,
+        comments: comments,
+        is_anonymous: isAnonymous
+      })
+
+    if (error) {
+      setQualityMessage(`❌ Error al enviar: ${error.message}`)
+    } else {
+      setQualityMessage("✅ ¡Feedback enviado! Gracias por ayudarnos a mejorar nuestros servicios.")
+      setRating(5)
+      setComments("")
+      setIsAnonymous(false)
+      setTimeout(() => setQualityMessage(null), 5000)
+    }
   }
 
   return (
@@ -42,7 +97,7 @@ export const PlanesView = () => {
                 animation: marquee 20s linear infinite;
               }
             `}</style>
-            {[...PROMOTIONS, ...PROMOTIONS].map((promo, index) => (
+            {[...promotions, ...promotions].map((promo, index) => (
               <span key={index} className={`flex-shrink-0 text-lg font-mono ${promo.color} tracking-wider mr-8`}>
                 ⚡ {promo.name}: {promo.discount} OFF en {promo.date}! ⚡
               </span>
@@ -51,7 +106,7 @@ export const PlanesView = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PLANS.map((plan, index) => (
+          {plans.map((plan, index) => (
             <div
               key={index}
               className={`p-6 ${plan.color} ${plan.border} border-2 rounded-xl text-center transition-shadow duration-300 hover:shadow-[0_0_25px_rgba(255,165,0,0.7)]`}

@@ -1,24 +1,72 @@
+// components/views/ReporteClienteView.tsx
 "use client"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react" // <-- 1. AÑADE useEffect
 import { Mail, Calendar, AlertTriangle } from "lucide-react"
-import { MUNICIPES, INITIAL_ORDERS } from "@/data/mock-data"
+// 2. ELIMINA INITIAL_ORDERS
+import { MUNICIPES, Order } from "@/data/mock-data" // <-- Mantén MUNICIPES por ahora
 import { Card } from "@/components/ui/Card"
 import { RetroButton } from "@/components/ui/RetroButton"
+import { supabase } from "@/lib/supabaseClient" // <-- 3. IMPORTA supabase
 
 interface ReporteClienteViewProps {
   setView: (view: string) => void
 }
 
 export const ReporteClienteView = ({ setView }: ReporteClienteViewProps) => {
-  const [tickets, setTickets] = useState(INITIAL_ORDERS.filter((o) => o.client === "Carlos Pérez"))
+  // 4. CAMBIA EL ESTADO INICIAL DE 'tickets'
+  const [tickets, setTickets] = useState<Order[]>([]) 
   const [newTicket, setNewTicket] = useState({ problem: "", zone: MUNICIPES[0], date: "", type: "falla" })
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  const handleReportSubmit = (e: React.FormEvent) => {
+  // 5. AÑADE useEffect Y LA FUNCIÓN fetchTickets
+  useEffect(() => {
+    fetchTickets()
+  }, [])
+
+  const fetchTickets = async () => {
+    // NOTA: Por ahora, filtraremos por 'Carlos Pérez' como en tu mock.
+    // Más adelante, deberías filtrar por el ID del usuario logueado.
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("client", "Carlos Pérez") // <-- Filtro de ejemplo
+      .order("id", { ascending: false }) // Muestra los más nuevos primero
+
+    if (data) {
+      setTickets(data)
+    }
+  }
+
+  // 6. MODIFICA handleReportSubmit PARA GUARDAR LA ORDEN
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSuccessMessage(
-      `Ticket #${Math.floor(Math.random() * 1000) + 200} creado con éxito para la zona de ${newTicket.zone}. Esté atento a su Historial de Tickets.`,
-    )
+    const isInstallation = newTicket.type === "instalacion"
+
+    // Prepara el objeto para Supabase
+    const newOrder = {
+      client: "Carlos Pérez", // <-- Hardcodeado por ahora
+      zone: newTicket.zone,
+      type: isInstallation ? "Instalación Nueva" : newTicket.problem || "Falla sin descripción",
+      priority: isInstallation ? "Bajo" : "Alto", // Lógica de ejemplo
+      status: "PENDIENTE",
+      technician: ""
+      // 'date' no está en tu tabla 'orders' del SQL, si lo añades, ponlo aquí.
+    }
+
+    const { error } = await supabase
+      .from("orders")
+      .insert(newOrder)
+
+    if (error) {
+      setSuccessMessage(`❌ Error al crear el ticket: ${error.message}`)
+    } else {
+      setSuccessMessage(
+        `Ticket creado con éxito para la zona de ${newTicket.zone}. Esté atento a su Historial de Tickets.`,
+      )
+      // 7. REFRESCA LA LISTA DE TICKETS
+      fetchTickets() 
+    }
+
     setTimeout(() => setSuccessMessage(null), 5000)
   }
 

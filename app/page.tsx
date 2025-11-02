@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react" // Importa useEffect
 import { Zap, Settings, AlertTriangle } from "lucide-react"
 import Image from "next/image"
 
@@ -10,37 +10,64 @@ import { ReporteClienteView } from "@/components/views/ReporteClienteView"
 import { AdminView } from "@/components/views/AdminView"
 import { AuthModal } from "@/components/auth/AuthModal"
 import { RetroButton } from "@/components/ui/RetroButton"
+import { supabase } from "@/lib/supabaseClient" // <-- 1. IMPORTAR SUPABASE
 
 export default function Home() {
-  const [view, setView] = useState("planes") // 'planes', 'reporte', 'admin'
+  const [view, setView] = useState("planes")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [username, setUsername] = useState("")
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
-  const [authForm, setAuthForm] = useState({ username: "", password: "", confirmPassword: "" })
+  const [authForm, setAuthForm] = useState({ email: "", password: "", confirmPassword: "" }) // <-- CAMBIA username por email
   const [authError, setAuthError] = useState("")
 
-  const [users, setUsers] = useState([
-    { username: "admin", password: "admin123" },
-    { username: "usuario", password: "pass123" },
-  ])
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setIsLoggedIn(true)
+        // Usamos el email como username si no tenemos un perfil
+        setUsername(session.user.email || "") 
+      }
+    }
+    checkUser()
 
-  const handleLogin = (e: React.FormEvent) => {
+    // Escuchar cambios en la autenticación (login, logout)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        setIsLoggedIn(true)
+        setUsername(session?.user.email || "")
+      }
+      if (event === "SIGNED_OUT") {
+        setIsLoggedIn(false)
+        setUsername("")
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe() // Limpiar el listener
+    }
+  }, [])
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError("")
-    const user = users.find((u) => u.username === authForm.username && u.password === authForm.password)
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authForm.email,
+      password: authForm.password,
+    })
 
-    if (user) {
-      setIsLoggedIn(true)
-      setUsername(authForm.username)
-      setShowAuthModal(false)
-      setAuthForm({ username: "", password: "", confirmPassword: "" })
+    if (error) {
+      setAuthError(error.message)
     } else {
-      setAuthError("Usuario o contraseña incorrectos")
+      setShowAuthModal(false)
+      cleanAuthModal()
+      // El listener de 'onAuthStateChange' se encargará de poner isLoggedIn = true
     }
   }
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setAuthError("")
 
@@ -58,21 +85,32 @@ export default function Home() {
       return
     }
 
-    setUsers([...users, { username: authForm.username, password: authForm.password }])
-    setIsLoggedIn(true)
-    setUsername(authForm.username)
-    setShowAuthModal(false)
-    setAuthForm({ username: "", password: "", confirmPassword: "" })
+    const { error } = await supabase.auth.signUp({
+      email: authForm.email,
+      password: authForm.password,
+    })
+
+    if (error) {
+      setAuthError(error.message)
+    } else {
+      // Supabase te envía un email de confirmación (puedes desactivarlo)
+      alert("¡Registro exitoso! Revisa tu email para confirmar.")
+      setShowAuthModal(false)
+      cleanAuthModal()
+    }
   }
 
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    setUsername("")
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error("Error al cerrar sesión:", error)
+    }
+    // El listener de 'onAuthStateChange' se encargará de poner isLoggedIn = false
   }
 
   const cleanAuthModal = () => {
     setAuthError("")
-    setAuthForm({ username: "", password: "", confirmPassword: "" })
+    setAuthForm({ email: "", password: "", confirmPassword: "" })
   }
 
   const getNavButtonClass = (target: string) =>
