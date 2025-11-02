@@ -61,7 +61,7 @@ export const PlanesView = () => {
                 ${plan.price}
                 <span className="text-base text-gray-300">/mes</span>
               </p>
-              <p className="text-5xl font-mono mb-4" style={{ color: '#60A5FA' }}>{plan.speed}MB</p>
+              <p className="text-5xl font-mono mb-4" style={{ color: '#000000' }}>{plan.speed}MB</p>
               <ul className="text-sm text-gray-200 space-y-1 mb-6">
                 {plan.features.map((feat, i) => (
                   <li key={i} className="flex items-center justify-center">
