@@ -16,36 +16,60 @@ export default function Home() {
   const [view, setView] = useState("planes")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [username, setUsername] = useState("")
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<"login" | "register">("login")
   const [authForm, setAuthForm] = useState({ email: "", password: "", confirmPassword: "" }) // <-- CAMBIA username por email
   const [authError, setAuthError] = useState("")
 
   useEffect(() => {
-    const checkUser = async () => {
+    const fetchSessionAndProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession()
+      
       if (session) {
         setIsLoggedIn(true)
-        // Usamos el email como username si no tenemos un perfil
-        setUsername(session.user.email || "") 
+        // Ahora, además de la sesión, busca el perfil
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username, role")
+          .eq("id", session.user.id)
+          .single() // .single() trae un solo objeto en lugar de un array
+        
+        if (profile) {
+          setUsername(profile.username || session.user.email)
+          setUserRole(profile.role) // <-- Guarda el rol
+        }
       }
     }
-    checkUser()
+    
+    fetchSessionAndProfile()
 
-    // Escuchar cambios en la autenticación (login, logout)
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        setIsLoggedIn(true)
-        setUsername(session?.user.email || "")
+    // El listener se actualiza para hacer lo mismo
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN") {
+          setIsLoggedIn(true)
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username, role")
+            .eq("id", session.user.id)
+            .single()
+            
+          if (profile) {
+            setUsername(profile.username || session.user.email)
+            setUserRole(profile.role)
+          }
+        }
+        if (event === "SIGNED_OUT") {
+          setIsLoggedIn(false)
+          setUsername("")
+          setUserRole(null) // <-- Limpia el rol al salir
+        }
       }
-      if (event === "SIGNED_OUT") {
-        setIsLoggedIn(false)
-        setUsername("")
-      }
-    })
+    )
 
     return () => {
-      authListener.subscription.unsubscribe() // Limpiar el listener
+      authListener.subscription.unsubscribe()
     }
   }, [])
 
@@ -162,9 +186,11 @@ export default function Home() {
               <button className={getNavButtonClass("reporte")} onClick={() => setView("reporte")}>
                 <AlertTriangle className="inline-block w-4 h-4 mr-2" /> Reporte / Instalación
               </button>
-              <button className={getNavButtonClass("admin")} onClick={() => setView("admin")}>
-                <Settings className="inline-block w-4 h-4 mr-2" /> Gestión de Ordenes de servicio
-              </button>
+              {isLoggedIn && userRole === 'admin' && (
+                <button className={getNavButtonClass("admin")} onClick={() => setView("admin")}>
+                  <Settings className="inline-block w-4 h-4 mr-2" /> Gestión de Ordenes de servicio
+                </button>
+              )}
             </div>
 
             <div className="flex items-center justify-center md:justify-end space-x-4">
