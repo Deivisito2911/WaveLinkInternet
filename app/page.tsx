@@ -134,12 +134,17 @@ export default function Home() {
   }
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error("Error al cerrar sesión:", error)
-    }
-    // El listener de 'onAuthStateChange' se encargará de poner isLoggedIn = false
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.error("Error al cerrar sesión:", error)
+  } else {
+    // ACTUALIZA EL ESTADO MANUALMENTE
+    setIsLoggedIn(false)
+    setUsername("")
+    setUserRole(null)
   }
+}
 
   const cleanAuthModal = () => {
     setAuthError("")
