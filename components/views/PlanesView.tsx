@@ -100,7 +100,7 @@ export const PlanesView = () => {
               }
             `}</style>
             {[...promotions, ...promotions].map((promo, index) => (
-              <span key={index} className={`flex-shrink-0 text-lg font-mono ${promo.color} tracking-wider mr-8`}>
+              <span key={index} className={`flex-shrink-0 text-lg font-extrabold ${promo.color} tracking-wider mr-8`}>
                 ⚡ {promo.name}: {promo.discount} OFF en {promo.date}! ⚡
               </span>
             ))}
